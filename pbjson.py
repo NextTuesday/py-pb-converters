@@ -33,12 +33,27 @@ import simplejson
 from google.protobuf.descriptor import FieldDescriptor as FD
 
 
-def dict2pb(cls, adict):
+def dict2pb(cls, adict, strict=False):
     """
     Takes a class representing the ProtoBuf Message and fills it with data from
     the dict.
     """
     obj = cls()
+    for field in obj.DESCRIPTOR.fields:
+        if not field.label == field.LABEL_REQUIRED:
+            continue
+        if not field.has_default_value:
+            continue
+        if not field.name in adict:
+            raise Exception('Field "%s" missing from descriptor dictionary.'
+                                % field.name)
+    field_names = set([field.name for field in obj.DESCRIPTOR.fields])
+    if strict:
+        for key in adict.keys():
+            if key not in field_names:
+                raise Exception(
+                    'Key "%s" can not be mapped to field in %s class.'
+                                    % (key, type(obj)))
     for field in obj.DESCRIPTOR.fields:
         if not field.name in adict:
             continue
@@ -85,12 +100,12 @@ def pb2dict(obj):
     return adict
 
 
-def json2pb(cls, json):
+def json2pb(cls, json, strict=False):
     """
     Takes a class representing the Protobuf Message and fills it with data from
     the json string.
     """
-    return dict2pb(cls, simplejson.loads(json))
+    return dict2pb(cls, simplejson.loads(json), strict)
 
 
 def pb2json(obj):
@@ -98,3 +113,4 @@ def pb2json(obj):
     Takes a ProtoBuf Message obj and convertes it to a json string.
     """
     return simplejson.dumps(pb2dict(obj), sort_keys=True, indent=4)
+
