@@ -32,6 +32,8 @@
 import simplejson
 from google.protobuf.descriptor import FieldDescriptor as FD
 
+class ConvertException(Exception):
+    pass
 
 def dict2pb(cls, adict, strict=False):
     """
@@ -45,15 +47,15 @@ def dict2pb(cls, adict, strict=False):
         if not field.has_default_value:
             continue
         if not field.name in adict:
-            raise Exception('Field "%s" missing from descriptor dictionary.'
-                                % field.name)
+            raise ConvertException('Field "%s" missing from descriptor dictionary.'
+                                   % field.name)
     field_names = set([field.name for field in obj.DESCRIPTOR.fields])
     if strict:
         for key in adict.keys():
             if key not in field_names:
-                raise Exception(
+                raise ConvertException(
                     'Key "%s" can not be mapped to field in %s class.'
-                                    % (key, type(obj)))
+                    % (key, type(obj)))
     for field in obj.DESCRIPTOR.fields:
         if not field.name in adict:
             continue
@@ -93,8 +95,8 @@ def pb2dict(obj):
                     adict[field.name] = value
         else:
             if field.type == FD.TYPE_MESSAGE:
-                adict[field.name] =\
-                     [pb2dict(v) for v in getattr(obj, field.name)]
+                adict[field.name] = \
+                    [pb2dict(v) for v in getattr(obj, field.name)]
             else:
                 adict[field.name] = [v for v in getattr(obj, field.name)]
     return adict
