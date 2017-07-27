@@ -31,6 +31,7 @@
 
 import simplejson
 from google.protobuf.descriptor import FieldDescriptor as FD
+from collections import OrderedDict;
 
 class ConvertException(Exception):
     pass
@@ -80,18 +81,18 @@ def pb2dict(obj):
     """
     Takes a ProtoBuf Message obj and convertes it to a dict.
     """
-    adict = {}
+    adict = OrderedDict()
     if not obj.IsInitialized():
         return None
     for field in obj.DESCRIPTOR.fields:
-        if not getattr(obj, field.name):
+        if  getattr(obj, field.name) is None:
             continue
         if not field.label == FD.LABEL_REPEATED:
             if not field.type == FD.TYPE_MESSAGE:
                 adict[field.name] = getattr(obj, field.name)
             else:
                 value = pb2dict(getattr(obj, field.name))
-                if value:
+                if value is not None:
                     adict[field.name] = value
         else:
             if field.type == FD.TYPE_MESSAGE:
@@ -110,9 +111,9 @@ def json2pb(cls, json, strict=False):
     return dict2pb(cls, simplejson.loads(json), strict)
 
 
-def pb2json(obj):
+def pb2json(obj,sort_keys=True, indent=4):
     """
     Takes a ProtoBuf Message obj and convertes it to a json string.
     """
-    return simplejson.dumps(pb2dict(obj), sort_keys=True, indent=4)
+    return simplejson.dumps(pb2dict(obj), sort_keys=sort_keys, indent=indent)
 
