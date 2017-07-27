@@ -95,6 +95,8 @@ def pb2dict(obj):
                 if value is not None:
                     adict[field.name] = value
         else:
+            if  not getattr(obj, field.name) :
+                continue
             if field.type == FD.TYPE_MESSAGE:
                 adict[field.name] = \
                     [pb2dict(v) for v in getattr(obj, field.name)]
