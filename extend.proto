@@ -14,9 +14,9 @@ message School {
 }
 
 extend Person {
-  optional int32  age = 100; //extend int
+  optional int32  age = 100; //simple cpp_type
   repeated School sch = 101; //repeated message
-  repeated string used_name = 102; //repeated string
+  repeated string used_name = 102; //repeated simple cpp_type
   optional Hometown ht = 103; //optional message
 }
 
