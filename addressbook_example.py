@@ -47,13 +47,13 @@ adr_book_json = {
     ]
 }
 
-#Convert JSoN to Protobuf
+# Convert JSoN to Protobuf
 adr_book = pbjson.dict2pb(AddressBook, adr_book_json, extend=extend_pb2)
-#print adr_book
+# print adr_book
 import simplejson as json
 print json.dumps(adr_book_json, indent=4)
 
-#Convert Protobuf to JSoN
+# Convert Protobuf to JSoN
 new_json = pbjson.pb2json(adr_book)
 print new_json
 
