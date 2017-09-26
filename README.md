@@ -6,7 +6,7 @@ Google's Protocol Buffers and JSoN.
 
 * Free software: BSD licensed
 * Python 2.6+
-* Source code and issue tracker: https://github.com/NextTuesday/py-pb-converters
+* Source code and issue tracker: https://github.com/kikyoo/py-pb-converters
 
 
 ----------------
@@ -16,7 +16,7 @@ from addressbook_pb2 import AddressBook
 import pbjson
 
 # Convert python dict to Protobuf
-adr_book = pbjson.dict2pb(AddressBook, adr_book_json)
+adr_book = pbjson.dict2pb(AddressBook, adr_book_json, extend=extend_pb2)
 
 # Convert Protobuf to JSoN
 new_json = pbjson.pb2json(adr_book)

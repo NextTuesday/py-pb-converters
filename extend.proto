@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package tutorial;
+
+import "addressbook.proto";
+
+message Hometown {
+  required string city = 1;
+}
+
+message School {
+  required string name = 1;
+  optional string city = 2;
+}
+
+extend Person {
+  optional int32  age = 100; //extend int
+  repeated School sch = 101; //repeated message
+  repeated string used_name = 102; //repeated string
+  optional Hometown ht = 103; //optional message
+}
+

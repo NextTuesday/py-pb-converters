@@ -35,7 +35,22 @@ from google.protobuf.descriptor import FieldDescriptor as FD
 class ConvertException(Exception):
     pass
 
-def dict2pb(cls, adict, strict=False):
+def dict2pb(cls, adict, strict=False, extend=None):
+    names = []
+    extensions = {}
+    if extend:
+        names = extend.DESCRIPTOR.extensions_by_name.keys()
+    for name in names:
+        attr = getattr(extend, name)
+        if attr.containing_type in extensions: 
+          extensions[attr.containing_type].append(attr)
+        else: 
+          extensions[attr.containing_type]=[attr]
+
+    return dict2pb_(cls, adict, strict, extensions)
+    
+
+def dict2pb_(cls, adict, strict=False, extensions={}):
     """
     Takes a class representing the ProtoBuf Message and fills it with data from
     the dict.
@@ -56,6 +71,26 @@ def dict2pb(cls, adict, strict=False):
                 raise ConvertException(
                     'Key "%s" can not be mapped to field in %s class.'
                     % (key, type(obj)))
+
+    if obj.DESCRIPTOR in extensions:
+        for field in extensions[obj.DESCRIPTOR]:
+            if not field.name in adict or None == adict[field.name]:
+                continue
+            msg_type = field.message_type
+            if field.label == FD.LABEL_REPEATED:
+                if field.type == FD.TYPE_MESSAGE:
+                    for sub_dict in adict[field.name]:
+                        item = getattr(obj, 'Extensions')[field].add()
+                        item.CopyFrom(dict2pb_(msg_type._concrete_class, sub_dict, strict, extensions))
+                else:
+                    map(getattr(obj, 'Extensions')[field].append, adict[field.name])
+            else:
+                if field.type == FD.TYPE_MESSAGE:
+                    value = dict2pb_(msg_type._concrete_class, adict[field.name], strict, extensions)
+                    getattr(obj, 'Extensions')[field].CopyFrom(value)
+                else:
+                    getattr(obj, 'Extensions')[field] = adict[field.name]
+
     for field in obj.DESCRIPTOR.fields:
         if not field.name in adict:
             continue
@@ -64,12 +99,12 @@ def dict2pb(cls, adict, strict=False):
             if field.type == FD.TYPE_MESSAGE:
                 for sub_dict in adict[field.name]:
                     item = getattr(obj, field.name).add()
-                    item.CopyFrom(dict2pb(msg_type._concrete_class, sub_dict))
+                    item.CopyFrom(dict2pb_(msg_type._concrete_class, sub_dict, strict, extensions))
             else:
                 map(getattr(obj, field.name).append, adict[field.name])
         else:
             if field.type == FD.TYPE_MESSAGE:
-                value = dict2pb(msg_type._concrete_class, adict[field.name])
+                value = dict2pb_(msg_type._concrete_class, adict[field.name], strict, extensions)
                 getattr(obj, field.name).CopyFrom(value)
             else:
                 setattr(obj, field.name, adict[field.name])
@@ -83,22 +118,33 @@ def pb2dict(obj):
     adict = {}
     if not obj.IsInitialized():
         return None
-    for field in obj.DESCRIPTOR.fields:
-        if not getattr(obj, field.name):
-            continue
-        if not field.label == FD.LABEL_REPEATED:
-            if not field.type == FD.TYPE_MESSAGE:
-                adict[field.name] = getattr(obj, field.name)
+    for field,value in obj.ListFields():
+        if field.label == FD.LABEL_REPEATED:
+            if field.type == FD.TYPE_MESSAGE:
+                if not field.is_extension:
+                    adict[field.name] = \
+                        [pb2dict(v) for v in getattr(obj, field.name)]
+                else:
+                    adict[field.name] = \
+                        [pb2dict(v) for v in getattr(obj, 'Extensions')[field]]
             else:
-                value = pb2dict(getattr(obj, field.name))
-                if value:
-                    adict[field.name] = value
+                if not field.is_extension:
+                    adict[field.name] = [v for v in getattr(obj, field.name)]
+                else:
+                    adict[field.name] = \
+                        [v for v in getattr(obj, 'Extensions')[field]]
         else:
             if field.type == FD.TYPE_MESSAGE:
-                adict[field.name] = \
-                    [pb2dict(v) for v in getattr(obj, field.name)]
+                if not field.is_extension:
+                    adict[field.name] = pb2dict(v)
+                else:
+                    adict[field.name] = pb2dict(getattr(obj, 'Extensions')[field])
             else:
-                adict[field.name] = [v for v in getattr(obj, field.name)]
+                if not field.is_extension:
+                    adict[field.name] = getattr(obj, field.name)
+                else:
+                    adict[field.name] = getattr(obj, 'Extensions')[field]
+
     return adict
 
 
