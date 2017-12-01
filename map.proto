@@ -1,0 +1,10 @@
+syntax='proto3';
+
+message C {
+    int32 id = 1;
+    string name = 2;
+}
+
+message M {
+    map<int32, C> d = 1;
+}

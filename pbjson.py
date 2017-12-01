@@ -31,6 +31,14 @@
 
 import simplejson
 from google.protobuf.descriptor import FieldDescriptor as FD
+try:
+    from google.protobuf.internal.containers import ScalarMap as ScalarMap
+    from google.protobuf.internal.containers import MessageMap as MessageMap
+except:
+    class ScalarMap(object):
+        pass
+    class MessageMap(object):
+        pass
 
 class ConvertException(Exception):
     pass
@@ -95,7 +103,14 @@ def dict2pb_(cls, adict, strict=False, extensions={}):
         if not field.name in adict:
             continue
         msg_type = field.message_type
-        if field.label == FD.LABEL_REPEATED:
+        if isinstance(getattr(obj, field.name), ScalarMap):
+            for k,v in adict[field.name].iteritems():
+                getattr(obj, field.name)[k] = v
+        elif isinstance(getattr(obj, field.name), MessageMap):
+            for k,v in adict[field.name].iteritems():
+                m = getattr(obj, field.name)[k]
+                m.CopyFrom(dict2pb_(m.__class__, v, strict, extensions))
+        elif field.label == FD.LABEL_REPEATED:
             if field.type == FD.TYPE_MESSAGE:
                 for sub_dict in adict[field.name]:
                     item = getattr(obj, field.name).add()
