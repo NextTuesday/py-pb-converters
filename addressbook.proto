@@ -1,3 +1,5 @@
+syntax = "proto2";
+
 package tutorial;
 
 message Person {
@@ -17,6 +19,9 @@ message Person {
   }
 
   repeated PhoneNumber phone = 4;
+
+  // Extensions.
+  extensions 100 to 9999;
 }
 
 message AddressBook {
