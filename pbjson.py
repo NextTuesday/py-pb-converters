@@ -32,8 +32,10 @@
 import simplejson
 from google.protobuf.descriptor import FieldDescriptor as FD
 
+
 class ConvertException(Exception):
     pass
+
 
 def dict2pb(cls, adict, strict=False):
     """
@@ -65,13 +67,23 @@ def dict2pb(cls, adict, strict=False):
                 for sub_dict in adict[field.name]:
                     item = getattr(obj, field.name).add()
                     item.CopyFrom(dict2pb(msg_type._concrete_class, sub_dict))
+            elif field.type == FD.TYPE_ENUM:
+                map(getattr(obj, field.name).append,
+                    [field.enum_type.values_by_name[name].number for name in adict[field.name]])
+
             else:
                 map(getattr(obj, field.name).append, adict[field.name])
         else:
             if field.type == FD.TYPE_MESSAGE:
                 value = dict2pb(msg_type._concrete_class, adict[field.name])
                 getattr(obj, field.name).CopyFrom(value)
+            elif field.type == FD.TYPE_ENUM:
+                # field.enum_type.values_by_name['YMD']
+                setattr(obj, field.name, field.enum_type.values_by_name[adict[field.name]].number)
             else:
+                # if adict[field.name] == 'YMD':
+                #     print field.name
+                print field.name, adict[field.name]
                 setattr(obj, field.name, adict[field.name])
     return obj
 
@@ -107,7 +119,7 @@ def json2pb(cls, json, strict=False):
     Takes a class representing the Protobuf Message and fills it with data from
     the json string.
     """
-    return dict2pb(cls, simplejson.loads(json), strict)
+    return dict2pb(cls, json.loads(json), strict)
 
 
 def pb2json(obj):
@@ -115,4 +127,3 @@ def pb2json(obj):
     Takes a ProtoBuf Message obj and convertes it to a json string.
     """
     return simplejson.dumps(pb2dict(obj), sort_keys=True, indent=4)
-
