@@ -6,6 +6,7 @@ Google's Protocol Buffers and JSoN.
 
 * Free software: BSD licensed
 * Python 2.6+
+* Python 3.6+
 * Source code and issue tracker: https://github.com/NextTuesday/py-pb-converters
 
 
